@@ -10,7 +10,7 @@ from keras import backend, models
 from losses import discriminator_loss, generator_loss
 from save import summarize_performance
 
-DATASET_SIZE = 63569
+DATASET_SIZE = 320
 
 # update the alpha value on each instance of WeightedSum
 # The alpha value of the weightedsum layer is gradually transitioned from 0 to 1 during the transition period when the model resolution is increased
@@ -26,8 +26,8 @@ def update_fadein(models, step, n_steps):
 def load_model(g_dir, d_dir, latent_dim):
     g_name = g_dir.split('/')[-1]
 
-    cur_block = g_name.split('-')[-1]
-    n_blocks = g_name.split('-')[-2]
+    n_blocks = g_name.split('-')[-1].split(".")[-2]
+    cur_block = g_name.split('-')[-2]
 
     cus = {
         'WeightedSum' : WeightedSum, 
@@ -36,8 +36,8 @@ def load_model(g_dir, d_dir, latent_dim):
         'Conv2DEQ' : Conv2DEQ
     }
 
-    g_model = models.load_model(g_dir, custom_objects=cus)
-    d_model = models.load_model(d_dir, custom_objects=cus)
+    g_model = models.load_model(g_dir, custom_objects=cus, compile=False)
+    d_model = models.load_model(d_dir, custom_objects=cus, compile=False)
 
     wgan = WGAN(
         discriminator=d_model,
@@ -117,7 +117,7 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
                 generator=g_normal,
                 latent_dim=latent_dim,
                 d_train = True,
-                discriminator_extra_steps=5
+                discriminator_extra_steps=1
         )
         # get the appropriate rescale size
         gen_shape = g_normal.output_shape
@@ -129,9 +129,16 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
                 class_mode='binary')
         # train normal or straight-through models
         train_epochs(wgan, real_generator, e_norm[0], n_batch[0])
-        summarize_performance('tuned', wgan, n_blocks, 1, latent_dim, save_dir)
-
+        summarize_performance('tuned', wgan, latent_dim, 1, n_blocks, save_dir)
         cur_block += 1
+    else:
+        wgan = WGAN(
+		discriminator=d_model,
+		generator=g_model,
+		latent_dim=latent_dim,
+		d_train = True,
+		discriminator_extra_steps=1
+	)
 
     # process each level of growth
     for i in range(cur_block, n_blocks):
@@ -160,7 +167,7 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
                 class_mode='binary')
         # train fade-in models for next level of growth
         train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], True)
-        summarize_performance('faded', wgan, n_blocks, i+1, latent_dim, save_dir)
+        summarize_performance('faded', wgan, latent_dim, i+1, n_blocks, save_dir)
         # update wgan to normal mode and train
         wgan.generator = g_normal
         wgan.discriminator = d_normal
@@ -173,4 +180,4 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
             #     discriminator_extra_steps=5
             # )
         train_epochs(wgan, real_generator, e_norm[i], n_batch[i])
-        summarize_performance('tuned', wgan, n_blocks, i+1, latent_dim, save_dir)
+        summarize_performance('tuned', wgan, latent_dim, i+1, n_blocks, save_dir)

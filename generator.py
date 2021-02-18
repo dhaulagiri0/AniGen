@@ -14,12 +14,12 @@ def add_generator_block(old_model, cur_block):
   # get the end of the last block
   block_end = old_model.layers[-2].output
   # upsample, and define new block
-  upsampling = UpSampling2D()(block_end)
+  upsampling = UpSampling2D(name='up2d_' + str(cur_block))(block_end)
   g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init)(upsampling)
-  g = PixelNormalization()(g)
+  g = PixelNormalization(name='pxnorm_' + str(cur_block) + '_1')(g)
   g = LeakyReLU(alpha=0.2)(g)
   g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init)(g)
-  g = PixelNormalization()(g)
+  g = PixelNormalization(name='pxnorm_' + str(cur_block) + '_2')(g)
   g = LeakyReLU(alpha=0.2)(g)
   # add new output layer
   out_image = Conv2DEQ(3, (1,1), padding='same', kernel_initializer=init)(g)

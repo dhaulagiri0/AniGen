@@ -4,6 +4,12 @@ from generator import define_generator
 from keras.preprocessing.image import ImageDataGenerator
 from data_process import pre
 
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
 
 if __name__ == '__main__':
     import argparse
@@ -41,12 +47,12 @@ if __name__ == '__main__':
     SAVE_DIR = args.save_dir
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
-    n_batch = [128, 128, 128, 64, 32, 16, 8, 4, 3]
-    n_epochs = [5, 8, 8, 10, 10, 10, 12, 14, 16]
+    n_batch = [128, 64, 64, 32, 16, 16, 8, 4, 3]
+    n_epochs = [1, 1, 1, 1, 1, 1, 2, 4, 1]
 
     if mode == 'train':
         # number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
-        n_blocks = args.n_blocks
+        n_blocks = int(args.n_blocks)
         # size of the latent space
         latent_dim = 512
 
@@ -70,6 +76,7 @@ if __name__ == '__main__':
         latent_dim = 512
 
         wgan, n_blocks, cur_block = load_model(g_model_dir, d_model_dir, latent_dim)
+        print('loaded')
 
         # prepare image generator
         real_gen = ImageDataGenerator(
@@ -78,7 +85,7 @@ if __name__ == '__main__':
                 preprocessing_function=pre)
 
         # train model
-        train(wgan.generator, wgan.discriminator, latent_dim, n_epochs, n_epochs, n_batch, n_blocks, real_gen, DATA_DIR, SAVE_DIR, cur_block)
+        train(wgan.generator, wgan.discriminator, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, int(cur_block))
 
     else:
         print('Not implemented')
