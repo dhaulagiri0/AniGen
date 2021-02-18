@@ -7,7 +7,7 @@ from custom_layers import WeightedSum, MinibatchStdev, Conv2DEQ
 
 # add a discriminator block
 def add_discriminator_block(old_model, cur_block, n_input_layers=3):
-  filters = [512, 512, 512, 256, 128, 64, 32, 16]
+  filters = [512, 512, 512, 512, 256, 128, 64, 32]
   f = filters[cur_block - 1]
   # weight initialization
   init = RandomNormal(mean=0., stddev=1.)
