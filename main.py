@@ -47,7 +47,7 @@ if __name__ == '__main__':
     SAVE_DIR = args.save_dir
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
-    n_batch = [128, 64, 64, 32, 16, 16, 8, 4, 3]
+    n_batch = [16, 16, 16, 16, 8, 4, 4, 2, 1]
     n_epochs = [1, 1, 1, 1, 1, 1, 2, 4, 1]
 
     if mode == 'train':

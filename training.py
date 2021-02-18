@@ -142,9 +142,10 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
 
     # process each level of growth
     for i in range(cur_block, n_blocks):
+        print(i)
         # retrieve models for this level of growth
-        [g_normal, g_fadein] = add_generator_block(wgan.generator, cur_block)
-        [d_normal, d_fadein] = add_discriminator_block(wgan.discriminator, cur_block)
+        [g_normal, g_fadein] = add_generator_block(wgan.generator, i)
+        [d_normal, d_fadein] = add_discriminator_block(wgan.discriminator, i)
         # [gan_normal, gan_fadein] = gan_models[i]
         # update the existing wgan to fade in stage
         wgan.generator = g_fadein

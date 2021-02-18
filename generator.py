@@ -4,7 +4,6 @@ from keras.constraints import max_norm
 from keras.initializers import RandomNormal
 from custom_layers import WeightedSum, MinibatchStdev, PixelNormalization, Conv2DEQ
 
-
 # add a generator block
 def add_generator_block(old_model, cur_block):
   filters = [512, 512, 512, 256, 128, 64, 32, 16]
@@ -14,6 +13,7 @@ def add_generator_block(old_model, cur_block):
   # get the end of the last block
   block_end = old_model.layers[-2].output
   # upsample, and define new block
+  print(cur_block)
   upsampling = UpSampling2D(name='up2d_' + str(cur_block))(block_end)
   g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init)(upsampling)
   g = PixelNormalization(name='pxnorm_' + str(cur_block) + '_1')(g)
