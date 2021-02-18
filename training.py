@@ -84,7 +84,11 @@ def train_epochs(wgan, real_generator, n_epochs, n_batch, fadein=False):
         X_real, _ = generate_real_samples(real_generator)
         # train the wgan for one batch
         losses = wgan.train_step(X_real)
-        print(f'd_loss_real: {float(losses['d_loss_real'])}  d_loss_fake: {float(losses['d_loss_fake'])}  d_loss: {float(losses['d_loss'])}  g_loss: {float(losses['g_loss'])}')
+        d_loss_real = float(losses['d_loss_real'])
+        d_loss_fake = float(losses['d_loss_fake'])
+        d_loss = float(losses['d_loss'])
+        g_loss = float(losses['g_loss'])
+        print(f'd_loss_real: {d_loss_real}  d_loss_fake: {d_loss_fake}  d_loss: {d_loss}  g_loss: {g_loss}')
         
         # wgan.train_on_batch(X_real)
 
