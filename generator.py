@@ -13,16 +13,15 @@ def add_generator_block(old_model, cur_block):
   # get the end of the last block
   block_end = old_model.layers[-2].output
   # upsample, and define new block
-  print(cur_block)
-  upsampling = UpSampling2D(name='up2d_' + str(cur_block))(block_end)
-  g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init)(upsampling)
-  g = PixelNormalization(name='pxnorm_' + str(cur_block) + '_1')(g)
-  g = LeakyReLU(alpha=0.2)(g)
-  g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init)(g)
-  g = PixelNormalization(name='pxnorm_' + str(cur_block) + '_2')(g)
-  g = LeakyReLU(alpha=0.2)(g)
+  upsampling = UpSampling2D(name='g_up2d_' + str(cur_block))(block_end)
+  g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init, name='g_conv_' + str(cur_block) + '_1')(upsampling)
+  g = PixelNormalization(name='g_pxnorm_' + str(cur_block) + '_1')(g)
+  g = LeakyReLU(alpha=0.2, name='g_relu_' + str(cur_block) + '_1')(g)
+  g = Conv2DEQ(f, (3,3), padding='same', kernel_initializer=init, name='g_conv_' + str(cur_block) + '_2')(g)
+  g = PixelNormalization(name='g_pxnorm_' + str(cur_block) + '_2')(g)
+  g = LeakyReLU(alpha=0.2, name='g_relu_' + str(cur_block) + '_2')(g)
   # add new output layer
-  out_image = Conv2DEQ(3, (1,1), padding='same', kernel_initializer=init)(g)
+  out_image = Conv2DEQ(3, (1,1), padding='same', kernel_initializer=init, name='g_conv_' + str(cur_block) + '_3')(g)
   # define model
   model1 = Model(old_model.input, out_image)
   # get the output layer from old model
@@ -30,7 +29,7 @@ def add_generator_block(old_model, cur_block):
   # connect the upsampling to the old output layer
   out_image2 = out_old(upsampling)
   # define new output image as the weighted sum of the old and new models
-  merged = WeightedSum()([out_image2, out_image])
+  merged = WeightedSum(name='g_wsum_' + str(cur_block) + '_1')([out_image2, out_image])
   # define model
   model2 = Model(old_model.input, merged)
   return [model1, model2]
@@ -43,18 +42,18 @@ def define_generator(latent_dim, in_dim=4):
   # base model latent input
   in_latent = Input(shape=(latent_dim,))
   # linear scale up to activation maps
-  g  = Dense(512 * in_dim * in_dim, kernel_initializer=init)(in_latent)
-  g = Reshape((in_dim, in_dim, 512))(g)
+  g  = Dense(512 * in_dim * in_dim, kernel_initializer=init, name='g_dense_0_1')(in_latent)
+  g = Reshape((in_dim, in_dim, 512), name='g_reshape_0_1')(g)
   # conv 4x4, input block
-  g = Conv2DEQ(512, (3,3), padding='same', kernel_initializer=init)(g)
-  g = PixelNormalization()(g)
-  g = LeakyReLU(alpha=0.2)(g)
+  g = Conv2DEQ(512, (3,3), padding='same', kernel_initializer=init, name='g_conv_0_1')(g)
+  g = PixelNormalization(name='g_pxnorm_0_1')(g)
+  g = LeakyReLU(alpha=0.2, name='g_relu_0_1')(g)
   # conv 3x3
-  g = Conv2DEQ(512, (3,3), padding='same', kernel_initializer=init)(g)
-  g = PixelNormalization()(g)
-  g = LeakyReLU(alpha=0.2)(g)
+  g = Conv2DEQ(512, (3,3), padding='same', kernel_initializer=init, name='g_conv_0_2')(g)
+  g = PixelNormalization(name='g_pxnorm_0_2')(g)
+  g = LeakyReLU(alpha=0.2, name='g_relu_0_2')(g)
   # conv 1x1, output block
-  out_image = Conv2DEQ(3, (1,1), padding='same', kernel_initializer=init)(g)
+  out_image = Conv2DEQ(3, (1,1), padding='same', kernel_initializer=init, name='g_conv_0_3')(g)
   # define model
   model = Model(in_latent, out_image)
       # LEGACY
