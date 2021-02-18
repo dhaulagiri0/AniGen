@@ -41,7 +41,7 @@ if __name__ == '__main__':
     SAVE_DIR = args.save_dir
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
-    n_batch = [16, 16, 16, 16, 16, 16, 14, 6, 3]
+    n_batch = [128, 128, 128, 64, 32, 16, 8, 4, 3]
     n_epochs = [5, 8, 8, 10, 10, 10, 12, 14, 16]
 
     if mode == 'train':
@@ -74,6 +74,7 @@ if __name__ == '__main__':
         # prepare image generator
         real_gen = ImageDataGenerator(
                 rescale=None,
+                rotation_range=15,
                 preprocessing_function=pre)
 
         # train model

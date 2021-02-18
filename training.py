@@ -8,6 +8,7 @@ from custom_layers import WeightedSum, PixelNormalization, MinibatchStdev, Conv2
 import keras
 from keras import backend, models
 from losses import discriminator_loss, generator_loss
+from save import summarize_performance
 
 DATASET_SIZE = 63569
 
@@ -21,36 +22,6 @@ def update_fadein(models, step, n_steps):
 		for layer in model.layers:
 			if isinstance(layer, WeightedSum):
 				backend.set_value(layer.alpha, alpha)
-
-# generate samples and save as a plot and save the model
-def summarize_performance(status, wgan, latent_dim, n_blocks, cur_block, save_dir, n_samples=25):
-    g_model = wgan.generator
-    d_model = wgan.discriminator
-    # devise name
-    gen_shape = g_model.output_shape
-    # model names contain current progression stage for easy resumption of training
-    name = f'{gen_shape[1]}x{gen_shape[2]}-{status}-{n_blocks}-{cur_block}'
-        # name = '%03dx%03d-%s' % (gen_shape[1], gen_shape[2], status)
-    # generate images
-    X, _ = generate_fake_samples(g_model, latent_dim, n_samples)
-    # normalize pixel values to the range [0,1]
-    X = (X - X.min()) / (X.max() - X.min())
-    # plot real images
-    square = int(sqrt(n_samples))
-    for i in range(n_samples):
-        pyplot.subplot(square, square, 1 + i)
-        pyplot.axis('off')
-        pyplot.imshow(X[i])
-    # save plot to file
-    filename1 = save_dir + '/plot_%s.png' % (name)
-    pyplot.savefig(filename1)
-    pyplot.close()
-    # save the generator model
-    filename_g = save_dir + '/generator_%s.h5' % (name)
-    filename_d = save_dir + '/discriminator_%s.h5' % (name)
-    g_model.save(filename_g)
-    d_model.save(filename_d)
-    print('>Saved: %s, %s and %s' % (filename1, filename_g, filename_d))
 
 def load_model(g_dir, d_dir, latent_dim):
     g_name = g_dir.split('/')[-1]
@@ -111,9 +82,10 @@ def train_epochs(wgan, real_generator, n_epochs, n_batch, fadein=False):
         # prepare real samples
         # the new wgan class no longer requires a y label
         X_real, _ = generate_real_samples(real_generator)
-
         # train the wgan for one batch
-        wgan.train_step(X_real)
+        losses = wgan.train_step(X_real)
+        print(f'd_loss_real: {float(losses['d_loss_real'])}  d_loss_fake: {float(losses['d_loss_fake'])}  d_loss: {float(losses['d_loss'])}  g_loss: {float(losses['g_loss'])}')
+        
         # wgan.train_on_batch(X_real)
 
             # LEGACY

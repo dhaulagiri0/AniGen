@@ -13,7 +13,7 @@ def wasserstein_loss(y_true, y_pred):
 def discriminator_loss(real_img, fake_img):
     real_loss = tf.reduce_mean(real_img)
     fake_loss = tf.reduce_mean(fake_img)
-    return fake_loss - real_loss
+    return real_loss, fake_loss, fake_loss - real_loss
 
 
 # Define the loss functions for the generator.

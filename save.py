@@ -1,5 +1,9 @@
+from data_process import generate_fake_samples
+from matplotlib import pyplot
+from math import sqrt
+
 # generate samples and save as a plot and save the model
-def summarize_performance(status, wgan, latent_dim, n_blocks, cur_block, n_samples=25):
+def summarize_performance(status, wgan, latent_dim, n_blocks, cur_block, save_dir, n_samples=25):
     g_model = wgan.generator
     d_model = wgan.discriminator
     # devise name
@@ -18,12 +22,12 @@ def summarize_performance(status, wgan, latent_dim, n_blocks, cur_block, n_sampl
         pyplot.axis('off')
         pyplot.imshow(X[i])
     # save plot to file
-    filename1 = DATA_DIR + '/plot_%s.png' % (name)
+    filename1 = save_dir + '/plot_%s.png' % (name)
     pyplot.savefig(filename1)
     pyplot.close()
     # save the generator model
-    filename_g = DATA_DIR + '/generator_%s.h5' % (name)
-    filename_d = DATA_DIR + '/discriminator_%s.h5' % (name)
+    filename_g = save_dir + '/generator_%s.h5' % (name)
+    filename_d = save_dir + '/discriminator_%s.h5' % (name)
     g_model.save(filename_g)
     d_model.save(filename_d)
     print('>Saved: %s, %s and %s' % (filename1, filename_g, filename_d))
