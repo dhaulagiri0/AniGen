@@ -42,7 +42,7 @@ def define_generator(latent_dim, in_dim=4):
   # base model latent input
   in_latent = Input(shape=(latent_dim,))
   # normalise latent features
-  g = PixelNormalization(name='g_pxnorm_0_2')(in_latent)
+  g = PixelNormalization(name='g_pxnorm_0_1')(in_latent)
   # linear scale up to activation maps
   g = DenseEQ(512 * in_dim * in_dim, kernel_initializer=init, name='g_dense_0_1')(g)
   g = Reshape((in_dim, in_dim, 512), name='g_reshape_0_1')(g)
