@@ -1,5 +1,5 @@
 import tensorflow as tf
-from keras import backend
+from tensorflow.keras import backend
 
 #DEPRECATED
 # An implementation of wasserstein used for a naive implementation of WGAN

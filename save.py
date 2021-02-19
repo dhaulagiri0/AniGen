@@ -4,8 +4,8 @@ from math import sqrt
 
 # generate samples and save as a plot and save the model
 def summarize_performance(status, wgan, latent_dim, n_blocks, cur_block, save_dir, n_samples=25):
-    g_model = wgan.generator
-    d_model = wgan.discriminator
+    g_model = wgan.get_gen
+    d_model = wgan.get_dis
     # devise name
     gen_shape = g_model.output_shape
     # model names contain current progression stage for easy resumption of training
@@ -33,7 +33,7 @@ def summarize_performance(status, wgan, latent_dim, n_blocks, cur_block, save_di
     print('>Saved: %s, %s and %s' % (filename1, filename_g, filename_d))
 
 def generate_samples(status, cur_step, wgan, latent_dim, save_dir, n_samples=25):
-    g_model = wgan.generator
+    g_model = wgan.get_gen
     # devise name
     gen_shape = g_model.output_shape
     # model names contain current progression stage for easy resumption of training

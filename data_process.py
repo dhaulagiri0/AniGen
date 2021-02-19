@@ -1,7 +1,8 @@
 import os
 from PIL import Image
 from PIL import UnidentifiedImageError
-from keras.preprocessing.image import ImageDataGenerator
+import tensorflow.keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from numpy.random import randn
 from numpy.random import randint
 from skimage.transform import resize

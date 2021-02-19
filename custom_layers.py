@@ -1,8 +1,8 @@
 import tensorflow as tf
-import keras
+import tensorflow.keras
 import numpy as np
-from keras import backend
-from keras.layers import Layer, Add, Conv2D, Dense
+from tensorflow.keras import backend
+from tensorflow.keras.layers import Layer, Add, Conv2D, Dense
 
 # pixel-wise feature vector normalization layer
 class PixelNormalization(Layer):

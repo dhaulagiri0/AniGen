@@ -1,7 +1,7 @@
 import tensorflow as tf
-import keras
+import tensorflow.keras
 
-class WGAN(keras.Model):
+class WGAN(tensorflow.keras.Model):
     def __init__(
         self,
         discriminator,
@@ -40,7 +40,7 @@ class WGAN(keras.Model):
         with tf.GradientTape() as gp_tape:
             gp_tape.watch(interpolated)
             # 1. Get the discriminator output for this interpolated image.
-            pred = self.discriminator(interpolated, training=True)
+            pred = self.get_dis(interpolated, training=True)
 
         # 2. Calculate the gradients w.r.t to this interpolated image.
         grads = gp_tape.gradient(pred, [interpolated])[0]
@@ -75,11 +75,11 @@ class WGAN(keras.Model):
                 )
                 with tf.GradientTape() as tape:
                     # Generate fake images from the latent vector
-                    fake_images = self.generator(random_latent_vectors, training=True)
+                    fake_images = self.get_gen(random_latent_vectors, training=True)
                     # Get the logits for the fake images
-                    fake_logits = self.discriminator(fake_images, training=True)
+                    fake_logits = self.get_dis(fake_images, training=True)
                     # Get the logits for the real images
-                    real_logits = self.discriminator(real_images, training=True)
+                    real_logits = self.get_dis(real_images, training=True)
 
                     # Calculate the discriminator loss using the fake and real image logits
                     d_loss_real, d_loss_fake, d_cost = self.d_loss_fn(real_img=real_logits, fake_img=fake_logits)
@@ -88,10 +88,10 @@ class WGAN(keras.Model):
                     # Add the gradient penalty to the original discriminator loss
                     d_loss = d_cost + gp * self.gp_weight
                 # Get the gradients w.r.t the discriminator loss
-                d_gradient = tape.gradient(d_loss, self.discriminator.trainable_variables)
+                d_gradient = tape.gradient(d_loss, self.get_dis.trainable_variables)
                 # Update the weights of the discriminator using the discriminator optimizer
                 self.d_optimizer.apply_gradients(
-                    zip(d_gradient, self.discriminator.trainable_variables)
+                    zip(d_gradient, self.get_dis.trainable_variables)
                 )
 
         # Train the generator
@@ -99,18 +99,26 @@ class WGAN(keras.Model):
         random_latent_vectors = tf.random.normal(shape=(batch_size, self.latent_dim))
         with tf.GradientTape() as tape:
             # Generate fake images using the generator
-            generated_images = self.generator(random_latent_vectors, training=True)
+            generated_images = self.get_gen(random_latent_vectors, training=True)
             # Get the discriminator logits for fake images
-            gen_img_logits = self.discriminator(generated_images, training=True)
+            gen_img_logits = self.get_dis(generated_images, training=False)
             # Calculate the generator loss
             g_loss = self.g_loss_fn(gen_img_logits)
             
         # Get the gradients w.r.t the generator loss
-        gen_gradient = tape.gradient(g_loss, self.generator.trainable_variables)
+        gen_gradient = tape.gradient(g_loss, self.get_gen.trainable_variables)
         # Update the weights of the generator using the generator optimizer
         self.g_optimizer.apply_gradients(
-            zip(gen_gradient, self.generator.trainable_variables)
+            zip(gen_gradient, self.get_gen.trainable_variables)
         )
                 # LEGACY PRINTING
                 # print(f'd_loss: {float(d_loss)}  g_loss: {float(g_loss)}')
         return {"d_loss_real": d_loss_real, "d_loss_fake": d_loss_fake,"d_loss": d_loss, "g_loss": g_loss}
+
+    @property
+    def get_gen(self):
+        return self.generator.model
+
+    @property
+    def get_dis(self):
+        return self.discriminator.model

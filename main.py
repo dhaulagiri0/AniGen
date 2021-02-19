@@ -1,8 +1,11 @@
+import os
+os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 from training import train, load_model
-from discriminator import define_discriminator
-from generator import define_generator
-from keras.preprocessing.image import ImageDataGenerator
+from discriminator import Discriminator
+from generator import Generator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from data_process import pre
+from wgan import WGAN
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -48,7 +51,7 @@ if __name__ == '__main__':
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
     n_batch = [128, 128, 64, 32, 8, 4, 4, 2, 1]
-    n_epochs = [10, 10, 15, 15, 20, 20, 20, 20, 20]
+    n_epochs = [8, 10, 15, 15, 20, 20, 20, 20, 20]
 
     if mode == 'train':
         # number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
@@ -57,8 +60,15 @@ if __name__ == '__main__':
         latent_dim = 512
 
         # define base model
-        d_base = define_discriminator()
-        g_base = define_generator(latent_dim)
+        d_base = Discriminator()
+        g_base = Generator(latent_dim)
+        wgan = WGAN(
+                discriminator=d_base,
+                generator=g_base,
+                latent_dim=latent_dim,
+                d_train = True,
+                discriminator_extra_steps=1
+        )
 
         # prepare image generator
         real_gen = ImageDataGenerator(
@@ -66,7 +76,7 @@ if __name__ == '__main__':
                 preprocessing_function=pre)
 
         # train model
-        train(g_base, d_base, latent_dim, n_epochs, n_epochs, n_batch, n_blocks, real_gen, DATA_DIR, SAVE_DIR)
+        train(wgan, latent_dim, n_epochs, n_epochs, n_batch, n_blocks, real_gen, DATA_DIR, SAVE_DIR)
 
     elif mode == 'resume':
         g_model_dir = args.g_model_path
@@ -84,7 +94,7 @@ if __name__ == '__main__':
                 preprocessing_function=pre)
 
         # train model
-        train(wgan.generator, wgan.discriminator, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, int(cur_block))
+        train(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, int(cur_block))
 
     else:
         print('Not implemented')
