@@ -33,7 +33,7 @@ if __name__ == '__main__':
                         metavar="/path/to/logs/",
                         help='Model checkpoints and sample plots directory')
     parser.add_argument('--n_blocks', required=False,
-                        default= 6,
+                        default= 9,
                         metavar="integer",
                         help='Number of conv blocks in decoder and encoder (supports up to 9 (1024x1024) of now)')
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
     n_batch = [16, 16, 16, 16, 8, 4, 4, 2, 1]
-    n_epochs = [1, 1, 1, 1, 1, 1, 2, 4, 1]
+    n_epochs = [10, 10, 15, 15, 20, 20, 20, 20, 20]
 
     if mode == 'train':
         # number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
@@ -81,7 +81,6 @@ if __name__ == '__main__':
         # prepare image generator
         real_gen = ImageDataGenerator(
                 rescale=None,
-                rotation_range=15,
                 preprocessing_function=pre)
 
         # train model

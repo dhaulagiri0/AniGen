@@ -8,9 +8,9 @@ from custom_layers import WeightedSum, PixelNormalization, MinibatchStdev, Conv2
 import keras
 from keras import backend, models
 from losses import discriminator_loss, generator_loss
-from save import summarize_performance
+from save import summarize_performance, generate_samples
 
-DATASET_SIZE = 320
+DATASET_SIZE = 63569
 
 # update the alpha value on each instance of WeightedSum
 # The alpha value of the weightedsum layer is gradually transitioned from 0 to 1 during the transition period when the model resolution is increased
@@ -50,14 +50,12 @@ def load_model(g_dir, d_dir, latent_dim):
     return wgan, n_blocks, cur_block
 
 # train a generator and discriminator
-def train_epochs(wgan, real_generator, n_epochs, n_batch, fadein=False):
+def train_epochs(wgan, real_generator, n_epochs, n_batch, save_dir, fadein=False):
     # calculate the number of batches per training epoch
     bat_per_epo = int(DATASET_SIZE / n_batch)
     # calculate the number of training iterations
     n_steps = bat_per_epo * n_epochs
-    # calculate the size of half a batch of samples
-    # half_batch = int(n_batch / 2)
-
+    
     # define optimizers
     generator_optimizer = keras.optimizers.Adam(
         lr=0.001, beta_1=0, beta_2=0.99, epsilon=10e-8
@@ -88,22 +86,11 @@ def train_epochs(wgan, real_generator, n_epochs, n_batch, fadein=False):
         d_loss_fake = float(losses['d_loss_fake'])
         d_loss = float(losses['d_loss'])
         g_loss = float(losses['g_loss'])
+        if (i+1) % bat_per_epo == 0:
+            if fadein: status = 'fade'
+            else: status = 'tune'
+            generate_samples(status, i+1, wgan, wgan.latent_dim, save_dir)
         print(f'd_loss_real: {d_loss_real}  d_loss_fake: {d_loss_fake}  d_loss: {d_loss}  g_loss: {g_loss}')
-        
-        # wgan.train_on_batch(X_real)
-
-            # LEGACY
-            # X_fake, y_fake = generate_fake_samples(g_model, latent_dim, half_batch)
-            # # print('Fake input shape: ', X_fake.shape)    
-            # # update discriminator model
-            # d_loss1 = d_model.train_on_batch(X_real, y_real)
-            # d_loss2 = d_model.train_on_batch(X_fake, y_fake)
-            # # update the generator via the discriminator's error
-            # z_input = generate_latent_points(latent_dim, n_batch)
-            # y_real2 = ones((n_batch, 1))
-            # g_loss = gan_model.train_on_batch(z_input, y_real2)
-            # # summarize loss on this batch
-            # print('>%d, d1=%.3f, d2=%.3f g=%.3f' % (i+1, d_loss1, d_loss2, g_loss))
 
 # train the generator and discriminator
 # real_gen is the keras image generator used to provide the real images
@@ -128,7 +115,7 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
                 batch_size=int(n_batch[0]),
                 class_mode='binary')
         # train normal or straight-through models
-        train_epochs(wgan, real_generator, e_norm[0], n_batch[0])
+        train_epochs(wgan, real_generator, e_norm[0], n_batch[0], save_dir)
         summarize_performance('tuned', wgan, latent_dim, 1, n_blocks, save_dir)
         cur_block += 1
     else:
@@ -150,14 +137,6 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
         # update the existing wgan to fade in stage
         wgan.generator = g_fadein
         wgan.discriminator = d_fadein
-            # LEGACY
-            # wgan_fade = WGAN(
-            #     discriminator=d_fadein,
-            #     generator=g_fadein,
-            #     latent_dim=latent_dim,
-            #     d_train = True,
-            #     discriminator_extra_steps=5
-            # )
         # get the appropriate rescale size
         gen_shape = g_normal.output_shape
         # create new generator
@@ -167,18 +146,10 @@ def train(g_model, d_model, latent_dim, e_norm, e_fadein, n_batch, n_blocks, rea
                 batch_size=int(n_batch[i]),
                 class_mode='binary')
         # train fade-in models for next level of growth
-        train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], True)
+        train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], save_dir, True)
         summarize_performance('faded', wgan, latent_dim, i+1, n_blocks, save_dir)
         # update wgan to normal mode and train
         wgan.generator = g_normal
         wgan.discriminator = d_normal
-            # LEGACY
-            # wgan_normal = WGAN(
-            #     discriminator=d_normal,
-            #     generator=g_normal,
-            #     latent_dim=latent_dim,
-            #     d_train = False,
-            #     discriminator_extra_steps=5
-            # )
-        train_epochs(wgan, real_generator, e_norm[i], n_batch[i])
+        train_epochs(wgan, real_generator, e_norm[i], n_batch[i], save_dir)
         summarize_performance('tuned', wgan, latent_dim, i+1, n_blocks, save_dir)
