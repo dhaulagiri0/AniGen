@@ -2,7 +2,7 @@ from keras.models import Model, Sequential
 from keras.layers import Input, Dense, Flatten, Reshape, Conv2D, UpSampling2D, AveragePooling2D, LeakyReLU, Layer, Add
 from keras.constraints import max_norm
 from keras.initializers import RandomNormal
-from custom_layers import WeightedSum, MinibatchStdev, Conv2DEQ
+from custom_layers import WeightedSum, MinibatchStdev, Conv2DEQ, DenseEQ
 
 
 # add a discriminator block
@@ -37,8 +37,6 @@ def add_discriminator_block(old_model, cur_block, n_input_layers=3):
     d = old_model.layers[i](d)
   # define straight-through model
   model1 = Model(in_image, d)
-  # compile model
-  # model1.compile(loss='mse', optimizer=discriminator_optimizer)
   # downsample the new larger image
   downsample = AveragePooling2D(name='d_avgpool_' + str(cur_block) + '_2')(in_image)
   # connect old input processing to downsampled new input
@@ -51,12 +49,10 @@ def add_discriminator_block(old_model, cur_block, n_input_layers=3):
     d = old_model.layers[i](d)
   # define straight-through model
   model2 = Model(in_image, d)
-  # compile model
-  # model2.compile(loss=wasserstein_loss, optimizer=discriminator_optimizer)
   return [model1, model2]
 
  
-# define the discriminator models for each image resolution
+# define base discriminator
 def define_discriminator(input_shape=(4,4,3)):
   # weight initialization
   init = RandomNormal(mean=0., stddev=1.)
@@ -74,21 +70,7 @@ def define_discriminator(input_shape=(4,4,3)):
   d = LeakyReLU(alpha=0.2, name='d_relu_0_3')(d)
   # dense output layer
   d = Flatten(name='d_flatten_0_1')(d)
-  out_class = Dense(1, activation='linear', name='d_dense_0_1')(d)
+  out_class = DenseEQ(1, activation='linear', name='d_dense_0_1')(d)
   # define model
   model = Model(in_image, out_class)
-  # compile model
-  # model.compile(loss=wasserstein_loss, optimizer=discriminator_optimizer)
-      # LEGACY
-      # # store model
-      # model_list.append([model, model])
-      # # create submodels
-      # for i in range(1, n_blocks):
-      #   # get prior model without the fade-on
-      #   old_model = model_list[i - 1][0]
-      #   # create new model for next resolution
-      #   models = add_discriminator_block(old_model)
-      #   # store model
-      #   model_list.append(models)
-      # return model_list
   return model
