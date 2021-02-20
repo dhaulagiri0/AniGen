@@ -3,6 +3,7 @@ import tensorflow.keras
 import numpy as np
 from tensorflow.keras import backend
 from tensorflow.keras.layers import Layer, Add, Conv2D, Dense
+from tensorflow.python.keras.layers.ops import core as core_ops
 
 # pixel-wise feature vector normalization layer
 class PixelNormalization(Layer):
@@ -70,52 +71,125 @@ class WeightedSum(Add):
         config.update({"alph":self.alpha.numpy(),})
         return config
 
-class Conv2DEQ(Conv2D):
-    def __init__(self, *args, **kwargs):
-        super(Conv2DEQ, self).__init__(*args, **kwargs)
+# class Conv2DEQ(Conv2D):
+#     def __init__(self, *args, **kwargs):
+#         super(Conv2DEQ, self).__init__(*args, **kwargs)
+
+#     def build(self, input_shape):
+#         super(Conv2DEQ, self).build(input_shape)
+#         # The number of inputs
+#         n = np.product([int(val) for val in input_shape[1:]])
+#         # He initialisation constant
+#         self.c = np.sqrt(2/n)
+
+#     def call(self, inputs):
+#         if self.rank == 2:
+#             outputs = backend.conv2d(
+#                 inputs,
+#                 self.kernel*self.c, # scale kernel
+#                 strides=self.strides,
+#                 padding=self.padding,
+#                 data_format=self.data_format,
+#                 dilation_rate=self.dilation_rate)
+
+#         if self.use_bias:
+#             outputs = backend.bias_add(
+#                 outputs,
+#                 self.bias,
+#                 data_format=self.data_format)
+
+#         if self.activation is not None:
+#             return self.activation(outputs)
+#         return outputs
+
+# class DenseEQ(Dense):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+
+#     def build(self, input_shape):
+#         super().build(input_shape)
+#         # The number of inputs
+#         n = np.product([int(val) for val in input_shape[1:]])
+#         # He initialisation constant
+#         self.c = np.sqrt(2/n)
+
+#     def call(self, inputs):
+#         output = backend.dot(inputs, self.kernel*self.c) # scale kernel
+#         if self.use_bias:
+#             output = backend.bias_add(output, self.bias, data_format='channels_last')
+#         if self.activation is not None:
+#             output = self.activation(output)
+#         return output
+
+class Conv2DEQ(Layer):
+    
+    kernel_initializer = tf.keras.initializers.RandomNormal(mean=0, stddev=1)
+    bias_initializer = tf.keras.initializers.Zeros()
+    
+    def __init__(self, n_kernels, kernel_size, padding, name):
+        super(Conv2DEQ, self).__init__(name=name)
+        self.n_kernels = n_kernels
+        self.kernel_size = kernel_size
+        self.padding = padding
 
     def build(self, input_shape):
-        super(Conv2DEQ, self).build(input_shape)
-        # The number of inputs
-        n = np.product([int(val) for val in input_shape[1:]])
-        # He initialisation constant
-        self.c = np.sqrt(2/n)
-
+        self.c = np.sqrt(2.0 / float(input_shape[-1] * self.kernel_size[0] * self.kernel_size[1]))
+        with tf.name_scope(self.name):
+            self.kernels = self.add_weight(
+                name='kernel',
+                shape=(*self.kernel_size, input_shape[-1], self.n_kernels),
+                initializer=Conv2DEQ.kernel_initializer,
+                trainable=True)
+            self.bias = self.add_weight(
+              name='bias',
+              shape=(self.n_kernels,),
+              initializer=Conv2DEQ.bias_initializer,
+              trainable=True)
+        
     def call(self, inputs):
-        if self.rank == 2:
-            outputs = backend.conv2d(
-                inputs,
-                self.kernel*self.c, # scale kernel
-                strides=self.strides,
-                padding=self.padding,
-                data_format=self.data_format,
-                dilation_rate=self.dilation_rate)
+        with tf.name_scope(self.name):
+            x = tf.nn.conv2d(inputs, self.kernels * self.c, 1, self.padding.upper(), name='conv_op')
+            x = tf.nn.bias_add(x, self.bias, name='bias_op')
+            return x
+        
+    def get_config(self):
+        return {
+            'n_kernels' : self.n_kernels,
+            'kernel_size' : self.kernel_size,
+            'padding' : self.padding,
+            'name' : self.name
+        }
 
-        if self.use_bias:
-            outputs = backend.bias_add(
-                outputs,
-                self.bias,
-                data_format=self.data_format)
+class DenseEQ(Layer):
 
-        if self.activation is not None:
-            return self.activation(outputs)
-        return outputs
-
-class DenseEQ(Dense):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    kernel_initializer = tf.keras.initializers.RandomNormal(mean=0, stddev=1)
+    bias_initializer = tf.keras.initializers.Zeros()
+    
+    def __init__(self, n_units, name):
+        super(DenseEQ, self).__init__(name=name)
+        self.n_units = n_units
 
     def build(self, input_shape):
-        super().build(input_shape)
-        # The number of inputs
-        n = np.product([int(val) for val in input_shape[1:]])
-        # He initialisation constant
-        self.c = np.sqrt(2/n)
-
+        self.c = np.sqrt(2.0 / float(input_shape[-1]))
+        with tf.name_scope(self.name):
+            self.kernels = self.add_weight(
+                name='weight',
+                shape=(input_shape[-1], self.n_units),
+                initializer=DenseEQ.kernel_initializer,
+                trainable=True)
+            self.bias = self.add_weight(
+                name='bias',
+                shape=(self.n_units,),
+                initializer=DenseEQ.bias_initializer,
+                trainable=True
+            )
+        
     def call(self, inputs):
-        output = backend.dot(inputs, self.kernel*self.c) # scale kernel
-        if self.use_bias:
-            output = backend.bias_add(output, self.bias, data_format='channels_last')
-        if self.activation is not None:
-            output = self.activation(output)
-        return output
+        with tf.name_scope(self.name):
+            return core_ops.dense(inputs, self.kernels * self.c, self.bias)
+        
+    def get_config(self):
+        return {
+            'n_units' : self.n_units,
+            'name' : self.name
+        }

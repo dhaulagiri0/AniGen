@@ -9,6 +9,7 @@ import tensorflow.keras
 from tensorflow.keras import backend, models
 from losses import discriminator_loss, generator_loss
 from save import summarize_performance, generate_samples
+from tensorflow.keras.utils import plot_model
 
 DATASET_SIZE = 63569
 
@@ -156,8 +157,12 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
         # train fade-in models for next level of growth
         train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], save_dir, True)
         summarize_performance('faded', wgan, latent_dim, i+1, n_blocks, save_dir)
+        plot_model(wgan.get_gen, to_file=f'E:/gen/g_plot_faded_{i}.png', show_shapes=True, show_layer_names=True)
+        plot_model(wgan.get_dis, to_file=f'E:/gen/d_plot_faded_{i}.png', show_shapes=True, show_layer_names=True)
         # switch to normal model and tune
         wgan.generator.switch()
         wgan.discriminator.switch()
         train_epochs(wgan, real_generator, e_norm[i], n_batch[i], save_dir)
         summarize_performance('tuned', wgan, latent_dim, i+1, n_blocks, save_dir)
+        plot_model(wgan.get_gen, to_file=f'E:/gen/g_plot_tuned_{i}.png', show_shapes=True, show_layer_names=True)
+        plot_model(wgan.get_dis, to_file=f'E:/gen/d_plot_tuned_{i}.png', show_shapes=True, show_layer_names=True)

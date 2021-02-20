@@ -8,7 +8,7 @@ class WGAN(tensorflow.keras.Model):
         generator,
         latent_dim,
         d_train,
-        discriminator_extra_steps=5,
+        discriminator_extra_steps=1,
         gp_weight=10.0,
     ):
         super(WGAN, self).__init__()
