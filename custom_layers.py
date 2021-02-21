@@ -5,7 +5,7 @@ from tensorflow.keras import backend
 from tensorflow.keras.layers import Layer, Add, Conv2D, Dense
 from tensorflow.python.keras.layers.ops import core as core_ops
 
-# pixel-wise feature vector normalization layer
+
 class PixelNormalization(Layer):
 	def __init__(self, **kwargs):
 		super(PixelNormalization, self).__init__(**kwargs)
