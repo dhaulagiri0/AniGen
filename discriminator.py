@@ -18,8 +18,6 @@ class Discriminator:
     old_model = self.model
     filters = [512, 512, 512, 512, 256, 128, 64, 32]
     f = filters[cur_block - 1]
-    # weight initialization
-    # init = RandomNormal(mean=0., stddev=1.)
     # get shape of existing model
     in_shape = list(old_model.input.shape)
     # define new input shape as double the size
@@ -27,13 +25,13 @@ class Discriminator:
     in_image = Input(shape=input_shape)
     # define new input processing layer
     if cur_block > 3:
-      d = Conv2DEQ(f/2, (1,1), padding='same', name='d_conv_' + str(cur_block) + '_1')(in_image)
+      d = Conv2DEQ(int(f/2), (1,1), padding='same', name='d_conv_' + str(cur_block) + '_1')(in_image)
     else:
       d = Conv2DEQ(f, (1,1), padding='same', name='d_conv_' + str(cur_block) + '_1')(in_image)
     d = LeakyReLU(alpha=0.2, name='d_relu_' + str(cur_block) + '_1')(d)
     # define new block
     if cur_block > 3:
-      d = Conv2DEQ(f/2, (3,3), padding='same', name='d_conv_' + str(cur_block) + '_2')(d)
+      d = Conv2DEQ(int(f/2), (3,3), padding='same', name='d_conv_' + str(cur_block) + '_2')(d)
     else:
       d = Conv2DEQ(f, (3,3), padding='same', name='d_conv_' + str(cur_block) + '_2')(d)
     d = LeakyReLU(alpha=0.2, name='d_relu_' + str(cur_block) + '_2')(d)
@@ -66,8 +64,6 @@ class Discriminator:
   
   # define base discriminator
   def define_discriminator(self, input_shape=(4,4,3)):
-    # weight initialization
-    # init = RandomNormal(mean=0., stddev=1.)
     # base model input
     in_image = Input(shape=input_shape)
     # conv 1x1

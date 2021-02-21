@@ -102,14 +102,6 @@ def train_epochs(wgan, real_generator, n_epochs, n_batch, save_dir, fadeIn=False
 def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_dir, save_dir, cur_block=0):
     # only runs this when we are training a model from scratch
     if cur_block == 0:
-        # fit the baseline model
-        # wgan = WGAN(
-        #         discriminator=d_normal,
-        #         generator=g_normal,
-        #         latent_dim=latent_dim,
-        #         d_train = True,
-        #         discriminator_extra_steps=1
-        # )
         # get the appropriate rescale size
         gen_shape = wgan.get_gen.output_shape
         # create new generator
@@ -122,14 +114,6 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
         train_epochs(wgan, real_generator, e_norm[0], n_batch[0], save_dir)
         summarize_performance('tuned', wgan, latent_dim, 1, n_blocks, save_dir)
         cur_block += 1
-    # else:
-    #     wgan = WGAN(
-    #         discriminator=d_model,
-    #         generator=g_model,
-    #         latent_dim=latent_dim,
-    #         d_train = True,
-    #         discriminator_extra_steps=1
-    #     )
 
     # process each level of growth
     for i in range(cur_block, n_blocks):
@@ -138,14 +122,6 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
         wgan.generator.add_generator_block(i)
         wgan.discriminator.add_discriminator_block(i)
 
-        # [g_normal, g_fadein] = add_generator_block(wgan.generator, i)
-        # [d_normal, d_fadein] = add_discriminator_block(wgan.discriminator, i)
-        # [gan_normal, gan_fadein] = gan_models[i]
-        # update the existing wgan to fade in stage
-        # wgan.generator = g_normal
-        # wgan.discriminator = d_normal
-        # wgan.generator_fade = g_fadein
-        # wgan.discriminator_fade = d_fadein
         # get the appropriate rescale size
         gen_shape = wgan.get_gen.output_shape
         # create new generator
@@ -157,12 +133,8 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
         # train fade-in models for next level of growth
         train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], save_dir, True)
         summarize_performance('faded', wgan, latent_dim, i+1, n_blocks, save_dir)
-        plot_model(wgan.get_gen, to_file=f'E:/gen/g_plot_faded_{i}.png', show_shapes=True, show_layer_names=True)
-        plot_model(wgan.get_dis, to_file=f'E:/gen/d_plot_faded_{i}.png', show_shapes=True, show_layer_names=True)
         # switch to normal model and tune
         wgan.generator.switch()
         wgan.discriminator.switch()
         train_epochs(wgan, real_generator, e_norm[i], n_batch[i], save_dir)
         summarize_performance('tuned', wgan, latent_dim, i+1, n_blocks, save_dir)
-        plot_model(wgan.get_gen, to_file=f'E:/gen/g_plot_tuned_{i}.png', show_shapes=True, show_layer_names=True)
-        plot_model(wgan.get_dis, to_file=f'E:/gen/d_plot_tuned_{i}.png', show_shapes=True, show_layer_names=True)

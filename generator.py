@@ -18,8 +18,6 @@ class Generator:
     old_model = self.model
     filters = [512, 512, 512, 256, 128, 64, 32, 16]
     f = filters[cur_block - 1]
-    # weight initialization
-    # init = RandomNormal(mean=0., stddev=1.)
     # get the end of the last block
     block_end = old_model.layers[-2].output
     # upsample, and define new block
@@ -37,8 +35,7 @@ class Generator:
     # get the output layer from old model
     out_old = old_model.layers[-1]
     # connect the upsampling to the old output layer
-    out_image2 = out_old(upsampl
-    ing)
+    out_image2 = out_old(upsampling)
     # define new output image as the weighted sum of the old and new models
     merged = WeightedSum(name='g_wsum_' + str(cur_block) + '_1')([out_image2, out_image])
     # define fade-in model
@@ -51,8 +48,6 @@ class Generator:
   
   # define base generator
   def define_generator(self, latent_dim, in_dim=4):
-    # weight initialization
-    # init = RandomNormal(mean=0., stddev=1.)
     # base model latent input
     in_latent = Input(shape=(latent_dim,))
     # normalise latent features
