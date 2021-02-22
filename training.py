@@ -106,6 +106,7 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
         gen_shape = wgan.get_gen.output_shape
         # create new generator
         d = f'{data_dir}/resized_data/{gen_shape[1]}x{gen_shape[1]}/'
+        print(d)
         if dynamic_resize: d = data_dir
         real_generator = real_gen.flow_from_directory(
                 d,

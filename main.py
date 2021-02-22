@@ -92,7 +92,7 @@ if __name__ == '__main__':
                 preprocessing_function=pre)
 
         # train model
-        # train(wgan, latent_dim, n_epochs, n_epochs, n_batch, n_blocks, real_gen, DATA_DIR, SAVE_DIR, dynamic_resize)
+        train(wgan, latent_dim, n_epochs, n_epochs, n_batch, n_blocks, real_gen, DATA_DIR, SAVE_DIR, args.dynamic_resize)
 
     elif mode == 'resume':
         g_model_dir = args.g_model_path
@@ -110,7 +110,7 @@ if __name__ == '__main__':
                 preprocessing_function=pre)
 
         # train model
-        train(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, dynamic_resize, int(cur_block))
+        train(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, args.dynamic_resize, int(cur_block))
 
     else:
         print('Not implemented')
