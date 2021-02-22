@@ -7,8 +7,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Train Mask R-CNN on Angio Dataset.')
     parser.add_argument('--dataset_dir', required=True,
-                        metavar="/path/to/angio/",
+                        metavar="/path/to/data/",
                         help="Directory of the dataset")
+    parser.add_argument('--save_dir', required=True,
+                        metavar="/path/to/save/",
+                        help="Directory to save the scaled dataset")
     parser.add_argument('--n_blocks', required=False,
                         default= 9,
                         metavar="integer",
@@ -17,11 +20,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print("Data folder: ", args.dataset_dir)
 
-    DATA_DIR = args.dataset_dir
+    data_dir = args.dataset_dir
+    save_dir = args.save_dir
     # number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
     n_blocks = int(args.n_blocks)
 
     # create data for each dimension
     for i in range(0, n_blocks):
         dim = 4 * 2**i
-        scale_all_data(DATA_DIR, (dim, dim))
+        scale_all_data(data_dir, (dim, dim), save_dir)
