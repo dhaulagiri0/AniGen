@@ -99,14 +99,16 @@ def train_epochs(wgan, real_generator, n_epochs, n_batch, save_dir, fadeIn=False
 
 # train the generator and discriminator
 # real_gen is the keras image generator used to provide the real images
-def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_dir, save_dir, cur_block=0):
+def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_dir, save_dir, dynamic_resize, cur_block=0):
     # only runs this when we are training a model from scratch
     if cur_block == 0:
         # get the appropriate rescale size
         gen_shape = wgan.get_gen.output_shape
         # create new generator
+        d = f'{data_dir}/resized_data/{gen_shape[1]}x{gen_shape[1]}/'
+        if dynamic_resize: d = data_dir
         real_generator = real_gen.flow_from_directory(
-                data_dir,
+                d,
                 target_size=gen_shape[1:-1],
                 batch_size=int(n_batch[0]),
                 class_mode='binary')
@@ -125,8 +127,10 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
         # get the appropriate rescale size
         gen_shape = wgan.get_gen.output_shape
         # create new generator
+        d = f'{data_dir}/resized_data/{gen_shape[1]}x{gen_shape[1]}/'
+        if dynamic_resize: d = data_dir
         real_generator = real_gen.flow_from_directory(
-                data_dir,
+                d,
                 target_size=gen_shape[1:-1],
                 batch_size=int(n_batch[i]),
                 class_mode='binary')

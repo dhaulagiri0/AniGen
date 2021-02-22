@@ -3,6 +3,7 @@ from PIL import Image
 from PIL import UnidentifiedImageError
 import tensorflow.keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import numpy as np
 from numpy.random import randn
 from numpy.random import randint
 from skimage.transform import resize
@@ -12,7 +13,7 @@ from numpy import ones
 
 def removeBrokenImg(DATA_DIR):
     for filename in os.listdir(DATA_DIR + '/1'):
-        if filename.endswith(".jpg"): 
+        if filename.endswith(".jpg") or filename.endswith(".png"): 
             try:
                 Image.open(DATA_DIR + '/1/' + filename)
             except UnidentifiedImageError:
@@ -72,3 +73,20 @@ def scale_dataset(images, new_shape):
 		# store
 		images_list.append(new_image)
 	return asarray(images_list)
+
+# creates a new dataset of the given resolution and saves in a specified folder
+def scale_all_data(data_dir, new_shape, out_dir=None):
+  if not out_dir:
+    out_dir = f'{data_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/'
+    if not os.path.isdir(out_dir):
+      os.mkdir(out_dir)
+
+  for filename in os.listdir(data_dir + '/'):
+    if filename.endswith(".jpg") or filename.endswith(".png"): 
+      im = Image.open(data_dir + '/' + filename)
+      im_arr = np.asarray(im)
+      resized = resize(im_arr, new_shape, 0)
+      im = Image.fromarray(np.uint8(resized)).convert('RGB')
+      im.save(out_dir + '/' + filename)
+
+
