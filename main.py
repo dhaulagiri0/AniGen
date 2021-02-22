@@ -69,12 +69,6 @@ if __name__ == '__main__':
         # size of the latent space
         latent_dim = 512
 
-        # create data for each dimension before training starts
-        if save_resize:
-            for i in range(0, n_blocks):
-                dim = 4 * 2**i
-                scale_all_data(DATA_DIR, (dim, dim))
-
         # define base model
         d_base = Discriminator()
         g_base = Generator(latent_dim)
