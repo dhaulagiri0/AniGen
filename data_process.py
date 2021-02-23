@@ -76,8 +76,12 @@ def scale_dataset(images, new_shape):
 	return asarray(images_list)
 
 # creates a new dataset of the given resolution and saves in a specified folder
-def scale_all_data(data_dir, new_shape, out_dir):
-  out_dir = f'{out_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/1/'
+def scale_all_data(data_dir, new_shape, save_dir):
+  out_dir = f'{save_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/1/'
+  if not os.path.isdir(f'{save_dir}/resized_data/'):
+    os.mkdir(f'{save_dir}/resized_data/')
+  if not os.path.isdir(f'{save_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/'):
+    os.mkdir(f'{save_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/')
   if not os.path.isdir(out_dir):
     os.mkdir(out_dir)
 
