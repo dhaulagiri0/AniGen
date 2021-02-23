@@ -62,7 +62,7 @@ if __name__ == '__main__':
     n_blocks = int(args.n_blocks)
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
-    n_batch = [128, 128, 64, 32, 6, 4, 4, 2, 1]
+    n_batch = [128, 128, 64, 32, 4, 4, 4, 2, 1]
     n_epochs = [8, 10, 10, 10, 10, 10, 15, 15, 20]
 
     if mode == 'train':
