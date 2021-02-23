@@ -28,4 +28,5 @@ if __name__ == '__main__':
     # create data for each dimension
     for i in range(0, n_blocks):
         dim = 4 * 2**i
+        print(f'generating {dim}x{dim} data')
         scale_all_data(data_dir, (dim, dim), save_dir)

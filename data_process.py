@@ -77,15 +77,17 @@ def scale_dataset(images, new_shape):
 
 # creates a new dataset of the given resolution and saves in a specified folder
 def scale_all_data(data_dir, new_shape, out_dir):
-  if not out_dir:
-    out_dir = f'{out_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/1/'
-    if not os.path.isdir(out_dir):
-      os.mkdir(out_dir)
+  out_dir = f'{out_dir}/resized_data/{new_shape[0]}x{new_shape[0]}/1/'
+  if not os.path.isdir(out_dir):
+    os.mkdir(out_dir)
 
   for filename in os.listdir(data_dir):
     if filename.endswith(".jpg") or filename.endswith(".png"): 
+      print(f'--{filename} Done')
       im = cv2.imread(data_dir + filename)
       resized = cv2.resize(im, new_shape)
       cv2.imwrite(out_dir + '/' + filename, resized)
+
+
 
 
