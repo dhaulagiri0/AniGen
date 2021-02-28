@@ -54,8 +54,21 @@ def load_model(g_dir, d_dir, latent_dim):
 
     return wgan, n_blocks, cur_block
 
+def load_generator(g_dir, latent_dim):
+    cus = {
+        'WeightedSum' : WeightedSum, 
+        'PixelNormalization' : PixelNormalization,
+        'MinibatchStdev' : MinibatchStdev,
+        'Conv2DEQ' : Conv2DEQ,
+        'DenseEQ' : DenseEQ
+    }
+    g_model = Generator(latent_dim)
+    g_model.model = models.load_model(g_dir, custom_objects=cus, compile=False)
+
+    return g_model
+
 # train a generator and discriminator
-def train_epochs(wgan, real_generator, n_epochs, n_batch, save_dir, fadeIn=False):
+def train_epochs(wgan, real_generator, n_epochs, n_batch, save_dir, n_block, fadeIn=False):
     # calculate the number of batches per training epoch
     bat_per_epo = int(DATASET_SIZE / n_batch)
     # calculate the number of training iterations
@@ -92,9 +105,13 @@ def train_epochs(wgan, real_generator, n_epochs, n_batch, save_dir, fadeIn=False
         d_loss = float(losses['d_loss'])
         g_loss = float(losses['g_loss'])
         if (i+1) % bat_per_epo == 0:
-            if fadeIn: status = 'fade'
-            else: status = 'tune'
-            generate_samples(status, i+1, wgan, wgan.latent_dim, save_dir)
+            if fadeIn: 
+                status = 'fade'
+                generate_samples(status, i+1, wgan, wgan.latent_dim, save_dir)
+            else: 
+                status = 'tune'
+                summarize_performance('tuned', wgan, wgan.latent_dim, i+1, n_block, save_dir)
+        
         print(f'd_loss_real: {d_loss_real}  d_loss_fake: {d_loss_fake}  d_loss: {d_loss}  g_loss: {g_loss}')
 
 # train the generator and discriminator
@@ -136,10 +153,28 @@ def train(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_
                 batch_size=int(n_batch[i]),
                 class_mode='binary')
         # train fade-in models for next level of growth
-        train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], save_dir, True)
+        train_epochs(wgan, real_generator, e_fadein[i], n_batch[i], save_dir, n_blocks, True)
         summarize_performance('faded', wgan, latent_dim, i+1, n_blocks, save_dir)
         # switch to normal model and tune
         wgan.generator.switch()
         wgan.discriminator.switch()
-        train_epochs(wgan, real_generator, e_norm[i], n_batch[i], save_dir)
+
+        train_epochs(wgan, real_generator, e_norm[i], n_batch[i], save_dir, n_blocks)
         summarize_performance('tuned', wgan, latent_dim, i+1, n_blocks, save_dir)
+
+def extra_epochs(wgan, latent_dim, e_norm, e_fadein, n_batch, n_blocks, real_gen, data_dir, save_dir, dynamic_resize, cur_block=0):
+        # get the appropriate rescale size
+        gen_shape = wgan.get_gen.output_shape
+        i = cur_block - 1
+        # create new generator
+        d = f'{data_dir}/resized_data/{gen_shape[1]}x{gen_shape[1]}/'
+        if dynamic_resize: d = data_dir
+        real_generator = real_gen.flow_from_directory(
+                d,
+                target_size=gen_shape[1:-1],
+                batch_size=int(n_batch[i]),
+                class_mode='binary')
+
+        train_epochs(wgan, real_generator, e_norm[i], n_batch[i], save_dir, n_blocks)
+        summarize_performance('tuned', wgan, latent_dim, i+1, n_blocks, save_dir)
+        

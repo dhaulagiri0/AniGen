@@ -92,6 +92,27 @@ def scale_all_data(data_dir, new_shape, save_dir):
       resized = cv2.resize(im, new_shape)
       cv2.imwrite(out_dir + '/' + filename, resized)
 
+def predict_samples(g_model, latent_dim, save_dir, n_samples=10):
+    # devise name
+    gen_shape = g_model.output_shape
+    # model names contain current progression stage for easy resumption of training
+    name = f'{gen_shape[1]}x{gen_shape[2]}'
+    if not os.path.isdir(f'{save_dir}/'):
+      os.mkdir(f'{save_dir}/')
+    if not os.path.isdir(f'{save_dir}/{name}/'):
+      os.mkdir(f'{save_dir}/{name}/')
+    # normalize pixel values to the range [0,1]
+    for i in range(n_samples):
+      x, _ = generate_fake_samples(g_model, latent_dim, 1)
+      # x = X[i]
+      x = (x - x.min()) / (x.max() - x.min())
+      x *= 255
+      x = x.astype(np.uint8)
+      # save plot to file
+      filename = f'{save_dir}/{name}/plot_{i}.png'
+      im = Image.fromarray(x)
+      im.save(filename)
 
+    print(f'{n_samples} sample(s) generated at {save_dir}')
 
 

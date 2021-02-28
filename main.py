@@ -1,11 +1,12 @@
 import os
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
-from training import train, load_model
+from training import train, load_model, load_generator, extra_epochs
 from discriminator import Discriminator
 from generator import Generator
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from data_process import pre, scale_all_data
 from wgan import WGAN
+from data_process import predict_samples
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -23,7 +24,7 @@ if __name__ == '__main__':
     parser.add_argument("command",
                         metavar="<command>",
                         help="'train', 'resume' or 'inference'")
-    parser.add_argument('--dataset_dir', required=True,
+    parser.add_argument('--dataset_dir', required=False,
                         metavar="/path/to/angio/",
                         help="Directory of the dataset")
     parser.add_argument('--g_model_path', required=False,
@@ -47,7 +48,14 @@ if __name__ == '__main__':
                         dest='dynamic_resize',
                         action='store_true',
                         help='Whether to keep the resized data in memory')
-    parser.set_defaults(save_resize = False, dynamic_resize=False)
+    parser.add_argument('--n_samples', required=False,
+                        dest='n_samples',
+                        help='Number of samples to predict')
+    parser.add_argument('--extra_epochs', required=False,
+                        dest='extra_epochs',
+                        action='store_true',
+                        help='Number of extra tune epochs to train')
+    parser.set_defaults(save_resize = False, dynamic_resize=False, extra_epochs=False)
 
     args = parser.parse_args()
     print("Command: ", args.command)
@@ -62,8 +70,8 @@ if __name__ == '__main__':
     n_blocks = int(args.n_blocks)
     
     # 4x, 8x, 16x, 32x, 64x, 128x, 256x, 512x, 1024x
-    n_batch = [128, 128, 64, 32, 6, 6, 4, 2, 1]
-    n_epochs = [8, 10, 10, 10, 10, 10, 15, 15, 20]
+    n_batch = [128, 128, 64, 32, 6, 4, 2, 1, 1]
+    n_epochs = [8, 10, 10, 10, 10, 15, 15, 15, 20]
 
     if mode == 'train':
         # size of the latent space
@@ -104,7 +112,21 @@ if __name__ == '__main__':
                 preprocessing_function=pre)
 
         # train model
-        train(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, args.dynamic_resize, int(cur_block))
+        if not args.extra_epochs:
+            train(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, args.dynamic_resize, int(cur_block))
+        else:
+            extra_epochs(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, args.dynamic_resize, int(cur_block))
+            train(wgan, latent_dim, n_epochs, n_epochs, n_batch, int(n_blocks), real_gen, DATA_DIR, SAVE_DIR, args.dynamic_resize, int(cur_block))
+    elif mode =='predict':
+        g_model_dir = args.g_model_path
 
+        # size of the latent space
+        latent_dim = 512
+
+        g_model = load_generator(g_model_dir, latent_dim)
+
+        n_samples = int(args.n_samples)
+        save_dir = args.save_dir
+        predict_samples(g_model.model, latent_dim, save_dir, n_samples)
     else:
         print('Not implemented')

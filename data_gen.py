@@ -16,6 +16,10 @@ if __name__ == '__main__':
                         default= 9,
                         metavar="integer",
                         help='Number of conv blocks in decoder and encoder (supports up to 9 (1024x1024) of now)')
+    parser.add_argument('--cur_block', required=False,
+                        default= 0,
+                        metavar="integer",
+                        help='Number of conv blocks in decoder and encoder to start from')
 
     args = parser.parse_args()
     print("Data folder: ", args.dataset_dir)
@@ -24,9 +28,9 @@ if __name__ == '__main__':
     save_dir = args.save_dir
     # number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
     n_blocks = int(args.n_blocks)
-
+    cur_block = int(args.cur_block)
     # create data for each dimension
-    for i in range(0, n_blocks):
+    for i in range(cur_block, n_blocks):
         dim = 4 * 2**i
         print(f'generating {dim}x{dim} data')
         scale_all_data(data_dir, (dim, dim), save_dir)
