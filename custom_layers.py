@@ -3,7 +3,7 @@ import tensorflow.keras
 import numpy as np
 from tensorflow.keras import backend
 from tensorflow.keras.layers import Layer, Add, Conv2D, Dense
-from tensorflow.python.keras.layers.ops import core as core_ops
+# from tensorflow.python.keras.layers.ops import core as core_ops
 
 
 class PixelNormalization(Layer):
@@ -136,7 +136,9 @@ class DenseEQ(Layer):
         
     def call(self, inputs):
         with tf.name_scope(self.name):
-            return core_ops.dense(inputs, self.kernels * self.c, self.bias)
+            output = tf.matmul(inputs, self.kernels * self.c) + self.bias
+            return output
+            #  return core_ops.dense(inputs, self.kernels * self.c, self.bias)
         
     def get_config(self):
         return {

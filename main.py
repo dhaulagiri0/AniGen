@@ -1,4 +1,5 @@
 import os
+import numpy as np
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 from training import train, load_model, load_generator, extra_epochs
 from discriminator import Discriminator
@@ -7,6 +8,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from data_process import pre, scale_all_data
 from wgan import WGAN
 from data_process import predict_samples
+from traversal import traverse_latent_space, genGif, read_latent_points
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -23,7 +25,7 @@ if __name__ == '__main__':
         description='Train Mask R-CNN on Angio Dataset.')
     parser.add_argument("command",
                         metavar="<command>",
-                        help="'train', 'resume' or 'inference'")
+                        help="'train', 'resume', 'predict', 'traverse")
     parser.add_argument('--dataset_dir', required=False,
                         metavar="/path/to/angio/",
                         help="Directory of the dataset")
@@ -55,6 +57,14 @@ if __name__ == '__main__':
                         dest='extra_epochs',
                         action='store_true',
                         help='Number of extra tune epochs to train')
+    parser.add_argument('--gen_gif', required=False,
+                        dest='gen_gif',
+                        action='store_true',
+                        default=False,
+                        help='whether to generate gif after latent space traversal')
+    parser.add_argument('--dims_path', required=False,
+                        dest='dims_path',
+                        help='path to nptxt file storing latent dims')
     parser.set_defaults(save_resize = False, dynamic_resize=False, extra_epochs=False)
 
     args = parser.parse_args()
@@ -128,5 +138,34 @@ if __name__ == '__main__':
         n_samples = int(args.n_samples)
         save_dir = args.save_dir
         predict_samples(g_model.model, latent_dim, save_dir, n_samples)
+    elif mode == 'traverse':
+        g_model_dir = args.g_model_path
+
+        latent_dim = 512
+
+        g_model = load_generator(g_model_dir, latent_dim)
+
+        n_samples = int(args.n_samples)
+        save_dir = args.save_dir
+
+        if args.dims_path:
+            dims_path = args.dims_path
+            latent_points = read_latent_points(dims_path, latent_dim, n_samples)
+        else:
+            latent_points = None
+        # generate images 
+        file_names, latent_dims = traverse_latent_space(g_model.model, latent_dim, save_dir, n_samples=n_samples, latent_points=latent_points)
+        if not args.dims_path:
+            with open(f'{save_dir}/dims_{latent_dim}_{len(latent_dims)}.txt', 'w') as f:
+                for row in latent_dims:
+                    np.savetxt(f, row)
+        print('Saved all latent dims')
+
+        gen_shape = g_model.model.output_shape
+        name = f'{gen_shape[1]}x{gen_shape[2]}'
+        # generate gif
+        if args.gen_gif:
+            genGif(save_dir + f'/{name}/', save_dir)
+            print('Gif generation successful')
     else:
         print('Not implemented')

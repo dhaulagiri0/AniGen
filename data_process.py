@@ -12,6 +12,17 @@ from numpy import zeros
 from numpy import ones
 import cv2
 
+def create_dir(save_dir, g_model):
+    # devise name
+    gen_shape = g_model.output_shape
+    # model names contain current progression stage for easy resumption of training
+    name = f'{gen_shape[1]}x{gen_shape[2]}'
+    if not os.path.isdir(f'{save_dir}/'):
+      os.mkdir(f'{save_dir}/')
+    if not os.path.isdir(f'{save_dir}/{name}/'):
+      os.mkdir(f'{save_dir}/{name}/')
+    return name
+
 def removeBrokenImg(DATA_DIR):
     for filename in os.listdir(DATA_DIR + '/1'):
         if filename.endswith(".jpg") or filename.endswith(".png"): 
@@ -92,27 +103,37 @@ def scale_all_data(data_dir, new_shape, save_dir):
       resized = cv2.resize(im, new_shape)
       cv2.imwrite(out_dir + '/' + filename, resized)
 
-def predict_samples(g_model, latent_dim, save_dir, n_samples=10):
-    # devise name
-    gen_shape = g_model.output_shape
-    # model names contain current progression stage for easy resumption of training
-    name = f'{gen_shape[1]}x{gen_shape[2]}'
-    if not os.path.isdir(f'{save_dir}/'):
-      os.mkdir(f'{save_dir}/')
-    if not os.path.isdir(f'{save_dir}/{name}/'):
-      os.mkdir(f'{save_dir}/{name}/')
-    # normalize pixel values to the range [0,1]
-    for i in range(n_samples):
-      x, _ = generate_fake_samples(g_model, latent_dim, 1)
-      # x = X[i]
+def prediction_post_process(X, file_name_head=None, batch_num=None):
+    for i, x in enumerate(X):
       x = (x - x.min()) / (x.max() - x.min())
       x *= 255
       x = x.astype(np.uint8)
-      # save plot to file
-      filename = f'{save_dir}/{name}/plot_{i}.png'
-      im = Image.fromarray(x)
-      im.save(filename)
+      X[i] = x
+      if file_name_head:
+          im = Image.fromarray(x)
+          if not batch_num:
+            im.save(file_name_head + f'_{str(i)}.png')
+          else:
+            im.save(file_name_head + f'_{str(i + batch_num)}.png')      
+
+def predict_samples(g_model, latent_dim, save_dir, n_samples=10):
+    name = create_dir(save_dir, g_model)
+    # normalize pixel values to the range [0,1]
+    X, _ = generate_fake_samples(g_model, latent_dim, n_samples)
+    prediction_post_process(X, f'{save_dir}/{name}/plot')
+    # for i in range(n_samples):
+    #   x, _ = generate_fake_samples(g_model, latent_dim, 1)
+    #   x = x[0]
+    #   x = (x - x.min()) / (x.max() - x.min())
+    #   x *= 255
+    #   x = x.astype(np.uint8)
+    #   # save plot to file
+    # for i, x in enumerate(X):
+    #     filename = f'{save_dir}/{name}/plot_{i}.png'
+    #     im = Image.fromarray(x)
+    #     im.save(filename)
 
     print(f'{n_samples} sample(s) generated at {save_dir}')
+
 
 
